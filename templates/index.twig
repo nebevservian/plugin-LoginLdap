@@ -317,12 +317,12 @@
                         <table>
                             <tr>
                                 <td>
-                                    <label for="">Supervisor Group DN</label>
+                                    <label for="">Superuser Group DN</label>
                                     <br/>
-                                    <span class="form-description">If the logged-in user is part of this group they will be given supervisor access</span>
+                                    <span class="form-description">If the logged-in user is part of this group they will be given superuser access</span>
                                 </td>
                                 <td>
-                                    <input size="25" type="text" value="{{ ldapConfig.entitlements_supervisor_dn }}" name="entitlements_supervisor_dn" />
+                                    <input size="25" type="text" value="{{ ldapConfig.entitlements_superuser_dn }}" name="entitlements_superuser_dn" />
                                 </td>
                             </tr>
                             {% for site in allSites %}
