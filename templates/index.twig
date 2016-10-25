@@ -292,8 +292,71 @@
                 </td>
             </tr>
 
+            <tr>
+                <td>
+                    <label>Entitlements Setting</label>
+                    <br/>
+                    <span class="form-description">How would you like to synchronise entitlements?</span>
+                </td>
+                <td>
+                    {{ '{{ ajaxForm.data.entitlements_type }}' }}
+                    <select name="entitlements_type" ng-model="ajaxForm.data.entitlements_type">
+                        <option value="attributes" selected="{{ ldapConfig.entitlements_type == 'attributes' ? 'selected': '' }}">Using LDAP Attributes</option>
+                        <option value="groups" selected="{{ ldapConfig.entitlements_type == 'groups' ? 'selected': '' }}">Using LDAP Groups</option>
+                    </select>
+                </td>
+            </tr>
+            <tr><td>&nbsp;</td><td></td></tr>
+
+           
+            {{ '{{ ajaxForm.data.entitlements_type }}' }}
+            <tr ng-show="ajaxForm.data.enable_synchronize_access_from_ldap">
+                <td colspan="2">
+                    <h3>Entitlements from Groups</h3>
+                    <div>
+                        <table>
+                            <tr>
+                                <td>
+                                    <label for="">Supervisor Group DN</label>
+                                    <br/>
+                                    <span class="form-description">If the logged-in user is part of this group they will be given supervisor access</span>
+                                </td>
+                                <td>
+                                    <input size="25" type="text" value="{{ ldapConfig.entitlements_supervisor_dn }}" name="entitlements_supervisor_dn" />
+                                </td>
+                            </tr>
+                            {% for site in allSites %}
+                            <tr>
+                                <td>
+                                    <label for=""><strong>{{ site.name }}</strong> - View-Only Group DN</label>
+                                    <br/>
+                                    <span class="form-description">If the logged-in user is part of this group (and not part of the admin or super user group), they will be given view access</span>
+                                </td>
+                                <td>
+                                    <input size="25" type="text" value="" name="entitlements_site_{{ site.idsite }}_view_dn" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label for=""><strong>{{ site.name }}</strong> - Admin Group DN</label>
+                                    <br/>
+                                    <span class="form-description">If the logged-in user is part of this group (and not part of the super user group), they will be given admin access</span>
+                                </td>
+                                <td>
+                                    <input size="25" type="text" name="entitlements_site_{{ site.idsite }}_admin_dn" />
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                        </table>
+                    </div>
+                </td>
+            </tr>
+
             <tr ng-show="ajaxForm.data.enable_synchronize_access_from_ldap">
                 <td>
+                    <h3>Entitlements from LDAP Attributes</h3>
+                    <br/>
                     <label for="ldapViewAccessField">{{ 'LoginLdap_LdapViewAccessField'|translate }}</label>
                     <br/>
                     <span class="form-description">{{ 'LoginLdap_LdapViewAccessFieldDescription'|translate }}</span>

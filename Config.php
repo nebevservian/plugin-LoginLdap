@@ -43,7 +43,9 @@ class Config
         'user_access_attribute_server_specification_delimiter' => ';',
         'user_access_attribute_server_separator' => ':',
         'instance_name' => '',
-        'ldap_network_timeout' => Client::DEFAULT_TIMEOUT_SECS
+        'ldap_network_timeout' => Client::DEFAULT_TIMEOUT_SECS,
+        'entitlements_type' => '',
+        'entitlements_supervisor_dn'=> ''
     );
 
     // for backwards compatibility

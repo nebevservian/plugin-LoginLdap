@@ -17,6 +17,7 @@ use Piwik\Plugin\Manager as PluginManager;
 use Piwik\Plugins\LoginLdap\Ldap\ServerInfo;
 use Piwik\Session;
 use Piwik\View;
+use Piwik\Plugins\SitesManager\API as SitesManagerApi;
 
 /**
  * Login controller
@@ -65,6 +66,11 @@ class Controller extends \Piwik\Plugins\Login\Controller
                 }
             }
         }
+
+        // Pass list of sites to the view
+        $api = SitesManagerApi::getInstance();
+        $allSites = $api->getAllSites();
+        $view->allSites = $allSites;
 
         // remove password field
         foreach ($view->servers as &$serverInfo) {
