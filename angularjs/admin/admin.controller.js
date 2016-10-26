@@ -6,14 +6,15 @@
  */
 
 angular.module('piwikApp').controller('LoginLdapAdminController', function ($scope, $attrs, piwikApi) {
+
     // LDAP server info management
     $scope.servers = JSON.parse($attrs['servers']) || [];
 
     $scope.servers.addServer = function () {
         this.push({
             name: "server" + (this.length + 1),
-            hostname: "",
-            port: 389,
+            hostname: "ldaps://",
+            port: 636,
             base_dn: "",
             admin_user: "",
             admin_pass: ""

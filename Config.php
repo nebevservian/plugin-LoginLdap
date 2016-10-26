@@ -13,6 +13,7 @@ use Piwik\Container\StaticContainer;
 use Piwik\Plugins\LoginLdap\Ldap\Client;
 use Piwik\Plugins\LoginLdap\Ldap\ServerInfo;
 use Psr\Log\LoggerInterface;
+use Piwik\Plugins\SitesManager\API as SitesManagerApi;
 
 /**
  * Utility class with methods to manage LoginLdap INI configuration.
@@ -44,7 +45,7 @@ class Config
         'user_access_attribute_server_separator' => ':',
         'instance_name' => '',
         'ldap_network_timeout' => Client::DEFAULT_TIMEOUT_SECS,
-        'entitlements_type' => '',
+        'entitlements_type' => 'attributes',
         'entitlements_supervisor_dn'=> ''
     );
 
@@ -224,6 +225,24 @@ class Config
         return self::getConfigOption('servers');
     }
 
+    public static function getGroupEntitlements()
+    {
+        $result = array();
+
+        $api = SitesManagerApi::getInstance();
+        $allSiteIds = array_keys($api->getAllSites());
+        $allowedKeys = array();
+        foreach($allSiteIds as $siteId) {
+            $allowedKeys[] = "entitlements_site_" . $siteId . "_admin_dn";
+            $allowedKeys[] = "entitlements_site_" . $siteId . "_view_dn";
+        }
+        foreach($allowedKeys as $allowedKey) {
+            $result[$allowedKey] = self::getConfigOption($allowedKey);
+        }
+        return $result;
+    }
+
+
     /**
      * Returns a list of {@link ServerInfo} instances describing the LDAP servers
      * that should be connected to.
@@ -295,6 +314,28 @@ class Config
         foreach (self::$defaultConfig as $name => $value) {
             if (isset($config[$name])) {
                 $loginLdap[$name] = $config[$name];
+            }
+        }
+
+        PiwikConfig::getInstance()->LoginLdap = $loginLdap;
+        PiwikConfig::getInstance()->forceSave();
+    }
+
+    public static function saveGroupEntitlements($config) {
+        $loginLdap = PiwikConfig::getInstance()->LoginLdap;
+
+        // Get all sites
+        $api = SitesManagerApi::getInstance();
+        $allSiteIds = array_keys($api->getAllSites());
+        $allowedKeys = array();
+        foreach($allSiteIds as $siteId) {
+            $allowedKeys[] = "entitlements_site_" . $siteId . "_admin_dn";
+            $allowedKeys[] = "entitlements_site_" . $siteId . "_view_dn";
+        }
+
+        foreach ($allowedKeys as $allowedKey) {
+            if (isset($config[$allowedKey])) {
+                $loginLdap[$allowedKey] = $config[$allowedKey];
             }
         }
 

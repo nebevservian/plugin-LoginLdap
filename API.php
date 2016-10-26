@@ -80,6 +80,24 @@ class API extends \Piwik\Plugin\API
     }
 
     /**
+     * Saves entitlement configuration
+     * @param string $data JSON encoded array w/ entitlement info
+     * @return array
+     * @throws Exception
+     */
+    public function saveEntitlementsConfig($data)
+    {
+        $this->checkHttpMethodIsPost();
+        Piwik::checkUserHasSuperUserAccess();
+
+        $data = json_decode(Common::unsanitizeInputValue($data), true);
+        Config::savePluginOptions($data);   // Save regular Key-Value stuff
+        Config::saveGroupEntitlements($data);
+        return array('result' => 'success', 'message' => Piwik::translate("General_YourChangesHaveBeenSaved"));
+    }
+
+
+    /**
      * Returns count of users in LDAP that are member of a specific group of names. Uses a search
      * filter with memberof=?.
      *

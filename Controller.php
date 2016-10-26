@@ -78,10 +78,16 @@ class Controller extends \Piwik\Plugins\Login\Controller
         }
 
         $view->ldapConfig = Config::getPluginOptionValuesWithDefaults();
+        $view->ldapConfig['groupEntitlements'] = Config::getGroupEntitlements(); // Get Group Entitlements
+
 
         $view->isLoginControllerActivated = PluginManager::getInstance()->isPluginActivated('Login');
 
         $view->updatedFromPre30 = Option::get('LoginLdap_updatedFromPre3_0');
+
+        $view->exampleGroupDn = 'cn=Admin Group,ou=Users,dc=organization,dc=com';
+        $view->exampleUserDn = 'cn=Piwik User,ou=Users,dc=organization,dc=com';
+        $view->exampleBaseDn = 'dc=organization,dc=com';
 
         return $view->render();
     }
