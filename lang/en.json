@@ -11,7 +11,6 @@
         "LdapPort": "Server Port",
         "MailField": "E-mail Address Field",
         "ServerUrl": "Server URL",
-        "ServerAlias": "Server Alias",
         "UserIdField": "User ID Field",
         "AliasFieldDescription": "The LDAP attribute used to generate a user's Piwik alias, e.g. \"cn\".",
         "MailFieldDescription": "The LDAP attribute containing a user's e-mail address, e.g. \"mail\".",
@@ -96,6 +95,17 @@
         "SaveAccessSyncSettings": "Save Access Synchronization Settings",
         "SaveLDAPServers": "Save LDAP Servers",
         "AddAServer": "Please add at least one LDAP server.",
-        "EntitlementsSynchronizationMethod": "LDAP Entitlements Synchronization Method"
+        "EntitlementsSynchronizationMethod": "LDAP Entitlements Synchronization Method",
+        "EntitlementsSynchronizationMethodDescription": "User entitlements can be stored either as LDAP attributes containing a delimited string, or using LDAP groups.",
+        "UsingLDAPGroups": "Using LDAP Groups",
+        "UsingLDAPAttributes": "Using LDAP Attributes",
+        "EntitlementsFromLDAPGroups": "Entitlements from LDAP Groups",
+        "EntitlementsFromLDAPAttributes": "Entitlements from LDAP Attributes",
+        "SuperUserGroupDNField": "Super User Group DN",
+        "SuperUserGroupDNDescription": "If the logged-in user is a member of this group they will be given Super User access (all sites).",
+        "AdminUserGroupDNField": "Admin Group DN for %1s",
+        "AdminUserGroupDNDescription": "If the logged-in user is a member of this group (and not a member of the Super User group), they will be given Admin access to the  %1s site.",
+        "ViewUserGroupDNField": "View Group DN for %1s",
+        "ViewUserGroupDNDescription": "If the logged-in user is a member of this group (and not a member of the Admin or Super User groups), they will be given View access to the %1s site."
     }
 }

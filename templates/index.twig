@@ -360,15 +360,14 @@
                     {{ 'LoginLdap_EntitlementsSynchronizationMethod'|translate }}
                 </label>
                 <div class="form-help">
-                    User entitlements can be stored either as LDAP attributes containing a delimited string,
-                    or using LDAP groups.
+                    {{ 'LoginLdap_EntitlementsSynchronizationMethodDescription'|translate }}
                 </div>
                 <select name="entitlements_type" id="entitlementsType">
                     <option value="groups" {% if ldapConfig.entitlements_type == 'groups' %}selected{% endif %}>
-                        Using LDAP Groups
+                        {{ 'LoginLdap_UsingLDAPGroups'|translate }}
                     </option>
                     <option value="attributes" {% if ldapConfig.entitlements_type == 'attributes' %}selected{% endif %}>
-                        Using LDAP Attributes
+                        {{ 'LoginLdap_UsingLDAPAttributes'|translate }}
                     </option>
                 </select>
             </div>
@@ -377,16 +376,18 @@
 
             <div ng-show="ajaxForm.data.entitlements_type === 'groups'">
 
-                <h3>Entitlements from LDAP Groups</h3>
+                <h3>
+                    {{ 'LoginLdap_EntitlementsFromLDAPGroups'|translate }}
+                </h3>
 
                 <!-- superuser group -->
 
                 <div class="form-group">
                     <label for="entitlementsSuperuserDn">
-                        Super User Group DN
+                        {{ 'LoginLdap_SuperUserGroupDNField'|translate }}
                     </label>
                     <div class="form-help">
-                        If the logged-in user is a member of this group they will be given Super User access (all sites).
+                        {{ 'LoginLdap_SuperUserGroupDNDescription'|translate }}
                     </div>
                     <input type="text"
                            name="entitlements_superuser_dn"
@@ -398,8 +399,6 @@
                 {% for site in allSites %}
 
                     <hr />
-                                    <span class="form-description">If the logged-in user is part of this group they will be given superuser access</span>
-                                    <input size="25" type="text" value="{{ ldapConfig.entitlements_superuser_dn }}" name="entitlements_superuser_dn" />
 
                     <div class="form-group">
                         <h4>{{ site.name }}</h4>
@@ -409,11 +408,10 @@
 
                     <div class="form-group">
                         <label for="entitlementsSite{{ site.idsite }}AdminDn">
-                            Admin Group DN for {{ site.name }}
+                            {{ 'LoginLdap_AdminUserGroupDNField'|translate(site.name) }}
                         </label>
                         <div class="form-help">
-                            If the logged-in user is a member of this group (and not a member of the Super User group),
-                            they will be given Admin access to the {{ site.name }} site.
+                            {{ 'LoginLdap_AdminUserGroupDNDescription'|translate(site.name) }}
                         </div>
 
                         <input type="text"
@@ -427,11 +425,10 @@
 
                     <div class="form-group">
                         <label for="entitlementsSite{{ site.idsite }}ViewDn">
-                            View Group DN for {{ site.name }}
+                            {{ 'LoginLdap_ViewUserGroupDNField'|translate(site.name) }}
                         </label>
                         <div class="form-help">
-                            If the logged-in user is a member of this group (and not a member of the Admin or Super User
-                            groups), they will be given View access to the {{ site.name }} site.
+                            {{ 'LoginLdap_ViewUserGroupDNDescription'|translate(site.name) }}
                         </div>
                         <input type="text"
                                name="entitlements_site_{{ site.idsite }}_view_dn"
@@ -450,7 +447,9 @@
 
             <div ng-show="ajaxForm.data.entitlements_type === 'attributes'">
 
-                <h3>Entitlements from LDAP Attributes</h3>
+                <h3>
+                    {{ 'LoginLdap_EntitlementsFromLDAPGroups'|translate }}
+                </h3>
 
                 <!-- superuser attribute -->
 
