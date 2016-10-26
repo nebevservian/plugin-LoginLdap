@@ -382,22 +382,24 @@
                 <!-- superuser group -->
 
                 <div class="form-group">
-                    <label for="entitlementsSupervisorDn">
+                    <label for="entitlementsSuperuserDn">
                         Super User Group DN
                     </label>
                     <div class="form-help">
                         If the logged-in user is a member of this group they will be given Super User access (all sites).
                     </div>
                     <input type="text"
-                           name="entitlements_supervisor_dn"
-                           value="{{ ldapConfig.entitlements_supervisor_dn }}"
-                           id="entitlementsSupervisorDn"
+                           name="entitlements_superuser_dn"
+                           value="{{ ldapConfig.entitlements_superuser_dn }}"
+                           id="entitlementsSuperuserDn"
                            placeholder="{{ exampleGroupDn }}" />
                 </div>
 
                 {% for site in allSites %}
 
                     <hr />
+                                    <span class="form-description">If the logged-in user is part of this group they will be given superuser access</span>
+                                    <input size="25" type="text" value="{{ ldapConfig.entitlements_superuser_dn }}" name="entitlements_superuser_dn" />
 
                     <div class="form-group">
                         <h4>{{ site.name }}</h4>

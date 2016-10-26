@@ -46,7 +46,7 @@ class Config
         'instance_name' => '',
         'ldap_network_timeout' => Client::DEFAULT_TIMEOUT_SECS,
         'entitlements_type' => 'attributes',
-        'entitlements_supervisor_dn'=> ''
+        'entitlements_superuser_dn'=> ''
     );
 
     // for backwards compatibility
@@ -212,6 +212,16 @@ class Config
     public static function shouldAppendUserEmailSuffixToUsername()
     {
         return self::getConfigOption('append_user_email_suffix_to_username') == 1;
+    }
+
+    public static function getEntitlementsType()
+    {
+        return self::getConfigOption('entitlements_type');
+    }
+
+    public static function getEntitlementsSuperuserDN()
+    {
+        return self::getConfigOption('entitlements_superuser_dn');
     }
 
     public static function getServerConfig($server)

@@ -298,7 +298,16 @@ class UserSynchronizer
         $logger = StaticContainer::get('Psr\Log\LoggerInterface');
 
         if (Config::isAccessSynchronizationEnabled()) {
-            $result->setUserAccessMapper(UserAccessMapper::makeConfigured());
+            $entitlements_type = Config::getEntitlementsType();
+            $logger->debug("UserSynchronizer::{func}(): Access Synchronization enabled. Entitlements type: {entitlements_type}", array(
+                'func' => __FUNCTION__,
+                'entitlements_type' => $entitlements_type
+            ));
+            if ( $entitlements_type === 'groups' ) {
+                $result->setUserAccessMapper(UserAccessGroupMapper::makeConfigured());
+            } else {
+                $result->setUserAccessMapper(UserAccessMapper::makeConfigured());
+            }
 
             $logger->debug("UserSynchronizer::{func}(): Using UserAccessMapper when synchronizing users.", array('func' => __FUNCTION__));
         } else {
