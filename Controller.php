@@ -78,7 +78,7 @@ class Controller extends \Piwik\Plugins\Login\Controller
         }
 
         $view->ldapConfig = Config::getPluginOptionValuesWithDefaults();
-        $view->ldapConfig['groupEntitlements'] = Config::getGroupEntitlements(); // Get Group Entitlements
+        $view->ldapConfig['groupEntitlements'] = Config::getGroupEntitlementsSuperuser(); // Get Group Entitlements (as superuser)
 
 
         $view->isLoginControllerActivated = PluginManager::getInstance()->isPluginActivated('Login');

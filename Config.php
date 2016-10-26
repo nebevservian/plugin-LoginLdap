@@ -251,6 +251,22 @@ class Config
         return $result;
     }
 
+    public static function getGroupEntitlementsSuperuser()
+    {
+        $loginLdap = PiwikConfig::getInstance()->LoginLdap;
+        $potential_keys = array();
+        $result = array();
+        $api = SitesManagerApi::getInstance();
+        $allSites = $api->getAllSites();
+        foreach($allSites as $site) {
+            $potential_keys[] = 'entitlements_site_' . $site['idsite'] . '_admin_dn';
+            $potential_keys[] = 'entitlements_site_' . $site['idsite'] . '_view_dn';
+        }
+        foreach($potential_keys as $pk) {
+            $result[$pk] = self::getConfigOption($pk);
+        }
+        return $result;
+    }
 
 
     /**
