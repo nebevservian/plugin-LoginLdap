@@ -235,22 +235,22 @@ class Config
         return self::getConfigOption('servers');
     }
 
+
+
     public static function getGroupEntitlements()
     {
-        $result = array();
 
-        $api = SitesManagerApi::getInstance();
-        $allSiteIds = array_keys($api->getAllSites());
-        $allowedKeys = array();
-        foreach($allSiteIds as $siteId) {
-            $allowedKeys[] = "entitlements_site_" . $siteId . "_admin_dn";
-            $allowedKeys[] = "entitlements_site_" . $siteId . "_view_dn";
-        }
-        foreach($allowedKeys as $allowedKey) {
-            $result[$allowedKey] = self::getConfigOption($allowedKey);
+        $loginLdap = PiwikConfig::getInstance()->LoginLdap;
+        $entitlementsKeys = array_filter(array_keys($loginLdap), function($el) {
+            return strpos($el, 'entitlements_site_') === 0;
+        });
+        $result = array();
+        foreach($entitlementsKeys as $entitlementsKey) {
+            $result[$entitlementsKey] = $loginLdap[$entitlementsKey];
         }
         return $result;
     }
+
 
 
     /**

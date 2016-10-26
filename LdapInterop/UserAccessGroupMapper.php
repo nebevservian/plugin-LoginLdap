@@ -18,27 +18,28 @@ class UserAccessGroupMapper extends UserAccessMapper
     private $logger;
 
     /**
-     * An array with each element being a sub array with group_dn, site_id (optional) and access_type (superuser, admin or view)
+     * An array with each element being a sub array with group_dn, site_id (optional) and access_level (superuser, admin or view)
      * @var array
      */
     private $groupsPermission;
 
-    private function addPotentialGroupPermission($group_dn, $access_type, $site_id = null)
+    private function addPotentialGroupPermission($groupDn, $accessLevel, $siteId = null)
     {
         $tmpGrp = array(
-            'group_dn' => $group_dn,
-            'access_type' => $access_type,
+            'group_dn' => $groupDn,
+            'access_level' => $accessLevel,
         );
-        if (!is_null($site_id) && is_numeric($site_id)) {
-            $tmpGrp['site_id'] = $site_id;
+        if (!is_null($siteId) && is_numeric($siteId)) {
+            $tmpGrp['site_id'] = $siteId;
         }
         $this->groupsPermission[] = $tmpGrp;
-        $this->logger->debug("UserAccessGroupMapper::{func}(): Users in {group_dn} will be {access_type} for {site}", array(
+        /*$this->logger->debug("UserAccessGroupMapper::{func}(): Users in {group_dn} will be {access_level} for {site}", array(
             'func' => __FUNCTION__,
-            'group_dn' => $group_dn,
-            'access_type' => $access_type . "s",
-            'site' => is_null($site_id) ? "All sites" : "Site ID $site_id"
+            'group_dn' => $groupDn,
+            'access_level' => $accessLevel . "s",
+            'site' => is_null($siteId) ? "All sites" : "Site ID $siteId"
         ));
+        */
     }
 
 
@@ -71,42 +72,60 @@ class UserAccessGroupMapper extends UserAccessMapper
 
         // Direct memberships are easier to resolve against (ie. 'memberOf' in AD)
         $memberOfAttribute = Config::getRequiredMemberOfField();
-        $direct_memberships = array();
+        $directMemberships = array();
         if (array_key_exists(strtolower($memberOfAttribute), $ldapUser)) {
-            $direct_memberships = array_map(function($tmp_dn) {
+            $directMemberships = array_map(function($tmp_dn) {
                 return strtolower($tmp_dn);
             }, $ldapUser[strtolower($memberOfAttribute)]);
         }
 
         $this->logger->debug("UserAccessGroupMapper::{func}(): Direct Memberships: {memberships}", array(
             'func' => __FUNCTION__,
-            'memberships' => print_r($direct_memberships, true)
+            'memberships' => print_r($directMemberships, true)
         ));
 
+        $result = array();
+
         // Loop through all the group checks
-        foreach( $this->groupsPermission as $permission_directive ) {
+        foreach( $this->groupsPermission as $permissionDirective ) {
             // Check Direct membership first
-            $tmp_group_member = false;
+            $this->logger->debug("UserAccessGroupMapper::{func}(): Checking to see if user is a member of {group}", array(
+                "func" => __FUNCTION__,
+                "group" => $permissionDirective['group_dn']
+            ));
+            $isGroupMember = in_array( strtolower($permissionDirective['group_dn']), $directMemberships );
 
-            if ( in_array( strtolower($permission_directive['group_dn']), $direct_memberships ) ) {
-                $tmp_group_member = true;
-            }
-            
-
-            if ($tmp_group_member === false) {
+            if ($isGroupMember === false) {
                 // If it's AD, we can do a recursive search
-                $tmp_group_member = $this->userExistsRecursive($ldapClient, $ldapUser['dn'], $permission_directive['group_dn']);
+                $isGroupMember = $this->userExistsRecursive($ldapClient, $ldapUser['dn'], $permissionDirective['group_dn']);
             }
 
-            if ($tmp_group_member === true) {
-                // Superuser
-                if ($permission_directive['access_type'] === 'superuser') {
+            if ($isGroupMember === true) {
+
+                if ($permissionDirective['access_level'] === 'superuser') {
                     return array('superuser' => true);
                 }
+
+                if ($permissionDirective['access_level'] === 'admin') {
+                    if (array_key_exists('admin', $result) === false) {
+                        $result['admin'] = array();
+                    }
+                    $result['admin'][] = $permissionDirective['site_id'];
+                }
+
+                if ($permissionDirective['access_level'] === 'view') {
+                    // ensure we haven't already added this site as an admin
+                    if (in_array($permissionDirective['site_id'], $result['admin']) === false) {
+                        if (array_key_exists('view', $result) === false) {
+                            $result['view'] = array();
+                        }
+                        $result['view'][] = $permissionDirective['site_id'];
+                    }
+                }
             }
-
         }
-
+        $this->logger->debug( print_r($result, true) );
+        return $result;
     }
 
 
@@ -168,7 +187,32 @@ class UserAccessGroupMapper extends UserAccessMapper
 
         // Get the Superuser group DN first
         $result->addPotentialGroupPermission( Config::getEntitlementsSuperuserDN(), 'superuser' );
+
+        // Get Group DNs
+        $siteDNs = Config::getGroupEntitlements();
+        $entitlements = array();
+        foreach($siteDNs as $entitlementDescriptor => $entitlementDn) {
+            $entitlementInfo = explode("_", $entitlementDescriptor);
+            $entitlements[] = array(
+                'site_id' => $entitlementInfo[2],
+                'access_level' => $entitlementInfo[3],
+                'entitlement_dn' => $entitlementDn
+            );
+        }
+
+        $result->addPotentialGroupPermissionForAccessLevel($entitlements, 'admin');
+        $result->addPotentialGroupPermissionForAccessLevel($entitlements, 'view');
+
         return $result;
+    }
+
+    private function addPotentialGroupPermissionForAccessLevel($allEntitlements, $accessLevel) {
+        $entitlements = array_filter($allEntitlements, function ($el) use($accessLevel) {
+            return $el['access_level'] === $accessLevel;
+        });
+        forEach($entitlements as $entitlement) {
+            $this->addPotentialGroupPermission($entitlement['entitlement_dn'], $accessLevel, $entitlement['site_id']);
+        }
     }
 
 }
