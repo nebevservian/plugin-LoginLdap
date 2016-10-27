@@ -20,6 +20,10 @@ use Piwik\Plugins\SitesManager\API as SitesManagerApi;
  */
 class Config
 {
+    const ENTITLEMENTS_KEY_PREFIX = 'entitlements_site_';
+    const ADMIN_KEY_SUFFIX = '_admin_dn';
+    const VIEW_KEY_SUFFIX = '_view_dn';
+
     public static $defaultConfig = array(
         'use_ldap_for_authentication' => 1,
         'synchronize_users_after_login' => 1,
@@ -235,14 +239,11 @@ class Config
         return self::getConfigOption('servers');
     }
 
-
-
     public static function getGroupEntitlements()
     {
-
         $loginLdap = PiwikConfig::getInstance()->LoginLdap;
         $entitlementsKeys = array_filter(array_keys($loginLdap), function($el) {
-            return strpos($el, 'entitlements_site_') === 0;
+            return strpos($el, self::ENTITLEMENTS_KEY_PREFIX) === 0;
         });
         $result = array();
         foreach($entitlementsKeys as $entitlementsKey) {
@@ -259,15 +260,14 @@ class Config
         $api = SitesManagerApi::getInstance();
         $allSites = $api->getAllSites();
         foreach($allSites as $site) {
-            $potential_keys[] = 'entitlements_site_' . $site['idsite'] . '_admin_dn';
-            $potential_keys[] = 'entitlements_site_' . $site['idsite'] . '_view_dn';
+            $potential_keys[] = self::ENTITLEMENTS_KEY_PREFIX . $site['idsite'] . self::ADMIN_KEY_SUFFIX;
+            $potential_keys[] = self::ENTITLEMENTS_KEY_PREFIX . $site['idsite'] . self::VIEW_KEY_SUFFIX;
         }
         foreach($potential_keys as $pk) {
             $result[$pk] = self::getConfigOption($pk);
         }
         return $result;
     }
-
 
     /**
      * Returns a list of {@link ServerInfo} instances describing the LDAP servers
@@ -349,22 +349,22 @@ class Config
 
     public static function saveGroupEntitlements($config) {
         $loginLdap = PiwikConfig::getInstance()->LoginLdap;
-
-        // Get all sites
         $api = SitesManagerApi::getInstance();
-        $allSiteIds = array_keys($api->getAllSites());
-        $allowedKeys = array();
-        foreach($allSiteIds as $siteId) {
-            $allowedKeys[] = "entitlements_site_" . $siteId . "_admin_dn";
-            $allowedKeys[] = "entitlements_site_" . $siteId . "_view_dn";
+
+        // construct the list of all sites' entitlements keys
+        $siteIds = array_keys($api->getAllSites());
+        $entitlementsKeys = array();
+        foreach($siteIds as $siteId) {
+            $entitlementsKeys[] = self::ENTITLEMENTS_KEY_PREFIX . $siteId . self::ADMIN_KEY_SUFFIX;
+            $entitlementsKeys[] = self::ENTITLEMENTS_KEY_PREFIX . $siteId . self::VIEW_KEY_SUFFIX;
         }
 
-        foreach ($allowedKeys as $allowedKey) {
-            if (isset($config[$allowedKey])) {
-                $loginLdap[$allowedKey] = $config[$allowedKey];
+        // persist the entitlements
+        foreach ($entitlementsKeys as $key) {
+            if (isset($config[$key])) {
+                $loginLdap[$key] = $config[$key];
             }
         }
-
         PiwikConfig::getInstance()->LoginLdap = $loginLdap;
         PiwikConfig::getInstance()->forceSave();
     }
