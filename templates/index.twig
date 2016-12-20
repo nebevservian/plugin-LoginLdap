@@ -1,698 +1,358 @@
 {% extends 'admin.twig' %}
 
 {% block content %}
-{% if isLoginControllerActivated|default(false) %}
-<div piwik-notification context="warning" noclear="true">
-    <strong>{{ 'General_Warning'|translate }}</strong>:
-    {{ 'LoginLdap_LoginPluginEnabledWarning'|translate("Login", "LoginLdap") }}
-</div>
-{% endif %}
+    {% if isLoginControllerActivated|default(false) %}
+        <div piwik-notification context="warning" noclear="true">
+            <strong>{{ 'General_Warning'|translate }}</strong>: {{ 'LoginLdap_LoginPluginEnabledWarning'|translate("Login", "LoginLdap") }}
+        </div>
+    {% endif %}
 
-<div ng-controller="LoginLdapAdminController as adminController"
-     ng-cloak
-     data-servers="{{ servers|json_encode }}">
-
-    <!-- ldap settings -->
-    <h2>{{ 'LoginLdap_Settings'|translate }}</h2>
+<div ng-controller="LoginLdapAdminController as adminController" data-servers="{{ servers|json_encode }}">
 
     <div piwik-ajax-form
-         submit-api-method="'LoginLdap.saveLdapConfig'"
-         send-json-payload="true">
+     submit-api-method="'LoginLdap.saveLdapConfig'"
+     use-custom-data-binding="true"
+     send-json-payload="true">
 
-        {% if updatedFromPre30|default %}
-            <div piwik-notification context="warning" noclear="true" id="pre300AlwaysUseLdapWarning">
-                <strong>{{ 'General_Note'|translate }}</strong>: {{ 'LoginLdap_UpdateFromPre300Warning'|translate }}
+        <div piwik-content-block id="ldapSettings"
+             content-title="{{ 'LoginLdap_Settings'|translate }}">
+
+
+            {% if updatedFromPre30|default %}
+                <div piwik-notification context="warning" noclear="true" id="pre300AlwaysUseLdapWarning">
+                    <strong>{{ 'General_Note'|translate }}</strong>: {{ 'LoginLdap_UpdateFromPre300Warning'|translate }}
+                </div>
+            {% endif %}
+
+            <div piwik-field uicontrol="checkbox" name="synchronize_users_after_login"
+                 title="{{ 'LoginLdap_UseLdapForAuthentication'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.use_ldap_for_authentication }}"
+                 ng-model="ajaxForm.data.use_ldap_for_authentication"
+                 inline-help="{{ 'LoginLdap_UseLdapForAuthenticationDescription'|translate|e('html_attr') }}<br /><br />{{ 'LoginLdap_MobileAppIntegrationNote'|translate|e('html_attr') }}">
             </div>
-        {% endif %}
 
-        <!-- always use LDAP for authentication -->
-
-        <div class="form-group">
-            <div class="form-help">
-                {{ 'LoginLdap_UseLdapForAuthenticationDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_MobileAppIntegrationNote'|translate }}
+            <div piwik-field uicontrol="checkbox" name="use_webserver_auth"
+                 title="{{ 'LoginLdap_Kerberos'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.use_webserver_auth }}"
+                 ng-model="ajaxForm.data.use_webserver_auth"
+                 inline-help="{{ 'LoginLdap_KerberosDescription'|translate|e('html_attr') }}">
             </div>
-            <label class="checkbox" for="use_ldap_for_authentication">
-                <input type="checkbox"
-                       {% if ldapConfig.use_ldap_for_authentication %}checked="checked"{% endif %}
-                       id="use_ldap_for_authentication"
-                       name="use_ldap_for_authentication"/>
-                {{ 'LoginLdap_UseLdapForAuthentication'|translate }}
-            </label>
-        </div>
 
-        <!-- synchronize users after successful login -->
-
-        <div class="form-group">
-            <div class="form-help">
-                {{ 'LoginLdap_SynchronizeUsersAfterLoginDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_SynchronizeUsersAfterLoginDescription2'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_network_timeout"
+                 title="{{ 'LoginLdap_NetworkTimeout'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_network_timeout }}"
+                 ng-model="ajaxForm.data.ldap_network_timeout"
+                 inline-help="{{ 'LoginLdap_NetworkTimeoutDescription'|translate|e('html_attr') }}<br />{{ 'LoginLdap_NetworkTimeoutDescription2'|translate|e('html_attr') }}">
             </div>
-            <label class="checkbox" for="synchronize_users_after_login">
-                <input type="checkbox"
-                       {% if ldapConfig.synchronize_users_after_login %}checked="checked"{% endif %}
-                       id="synchronize_users_after_login"
-                       name="synchronize_users_after_login"/>
-                {{ 'LoginLdap_SynchronizeUsersAfterLogin'|translate }}
-            </label>
-        </div>
 
-        <!-- use web server -->
-
-        <div class="form-group">
-            <div class="form-help">
-                {{ 'LoginLdap_KerberosDescription'|translate }}
+            <div piwik-field uicontrol="text" name="required_member_of_field"
+                 title="{{ 'LoginLdap_MemberOfField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.required_member_of_field }}"
+                 ng-model="ajaxForm.data.required_member_of_field"
+                 inline-help="{{ 'LoginLdap_MemberOfFieldDescription'|translate|e('html_attr') }}">
             </div>
-            <label class="checkbox" for="useKerberos">
-                <input type="checkbox"
-                       {% if ldapConfig.use_webserver_auth %}checked="checked"{% endif %}
-                       id="useKerberos"
-                       name="use_webserver_auth"/>
-                {{ 'LoginLdap_Kerberos'|translate }}
-            </label>
-        </div>
 
-        <!-- request timeout -->
-
-        <div class="form-group">
-            <label for="ldap_network_timeout">
-                {{ 'LoginLdap_NetworkTimeout'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_NetworkTimeoutDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_NetworkTimeoutDescription2'|translate }}
-            </div>
-            <input type="text"
-                   value="{{ ldapConfig.ldap_network_timeout }}"
-                   id="ldap_network_timeout"
-                   name="ldap_network_timeout"/>
-        </div>
-
-        <!-- memberOf field -->
-
-        <div class="form-group">
-            <label for="memberOfField">
-                {{ 'LoginLdap_MemberOfField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_MemberOfFieldDescription'|translate }}
-            </div>
-            <input id="memberOfField"
-                   name="required_member_of_field"
-                   value="{{ ldapConfig.required_member_of_field }}"/>
-        </div>
-
-        <!-- required user group -->
-
-        <div class="form-group">
-            <label for="memberOf">
-                {{ 'LoginLdap_MemberOf'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_MemberOfDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_MemberOfDescription2'|translate }}
-            </div>
-            <div piwik-login-ldap-testable-field
-                 input-id="memberOf"
+            <div piwik-login-ldap-testable-field uicontrol="text" name="required_member_of"
+                 title="{{ 'LoginLdap_MemberOf'|translate|e('html_attr') }}"
+                 inline-help="{{ 'LoginLdap_MemberOfDescription'|translate|e('html_attr') }} <br />{{ 'LoginLdap_MemberOfDescription2'|translate|e('html_attr') }}"
+                 ng-model="ajaxForm.data.required_member_of"
+                 value="{{ ldapConfig.required_member_of }}"
                  test-api-method="'LoginLdap.getCountOfUsersMemberOf'"
                  test-api-method-arg="'memberOf'"
-                 name="required_member_of"
-                 value="{{ ldapConfig.required_member_of }}"
                  success-translation="LoginLdap_MemberOfCount">
             </div>
-        </div>
 
-        <!-- search filter -->
-
-        <div class="form-group">
-            <label for="filter">
-                {{ 'LoginLdap_Filter'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_FilterDescription'|translate }}
-            </div>
-            <div piwik-login-ldap-testable-field
-                 input-id="filter"
+            <div piwik-login-ldap-testable-field uicontrol="text" name="ldap_user_filter"
+                 title="{{ 'LoginLdap_Filter'|translate|e('html_attr') }}"
+                 inline-help="{{ 'LoginLdap_FilterDescription'|translate|e('html_attr') }}"
+                 ng-model="ajaxForm.data.ldap_user_filter"
+                 value="{{ ldapConfig.ldap_user_filter }}"
                  test-api-method="'LoginLdap.getCountOfUsersMatchingFilter'"
                  test-api-method-arg="'filter'"
-                 name="ldap_user_filter"
-                 value="{{ ldapConfig.ldap_user_filter }}"
                  success-translation="LoginLdap_FilterCount">
             </div>
+
+            <hr />
+
+            <div piwik-save-button saving="ajaxform.isSubmitting" onconfirm="ajaxForm.submitForm()"></div>
         </div>
 
-        <!-- submit -->
+        <div piwik-content-block id="ldapUserMappingSettings"
+             content-title="{{ 'LoginLdap_UserSyncSettings'|translate }}">
 
-        <input class="submit"
-               type="submit"
-               value="{{ 'LoginLdap_SaveLDAPSettings'|translate }}"
-               ng-disabled="ajaxForm.isSubmitting"/>
-
-    </div>
-
-    <!-- user synchronization settings -->
-
-    <h2>{{ 'LoginLdap_UserSyncSettings'|translate }}</h2>
-
-    <div piwik-ajax-form
-         submit-api-method="'LoginLdap.saveLdapConfig'"
-         send-json-payload="true">
-
-        <!-- load user form -->
-
-        <div piwik-notification context="info" noclear="true">
-            <strong>{{ 'LoginLdap_LoadUser'|translate }}</strong>
-            <p>{{ 'LoginLdap_LoadUserDescription'|translate }}</p>
-            <input ng-model="userToSynchronize" type="text" value="" piwik-onenter="$parent.$parent.synchronizeUser(userToSynchronize)" placeholder="Enter a username..."/>
-            <a href="" ng-click="$parent.$parent.synchronizeUser(userToSynchronize)">{{ 'LoginLdap_Go'|translate }}</a>
-            <img src="plugins/Morpheus/images/loading-blue.gif" ng-show="$parent.$parent.currentSynchronizeUserRequest" /><br/>
-            <br/>
-            <div ng-show="$parent.$parent.synchronizeUserError || $parent.$parent.synchronizeUserDone">
-                <div ng-if="$parent.$parent.synchronizeUserError">{% verbatim %}{{ $parent.$parent.$parent.synchronizeUserError }}{% endverbatim %}</div>
-                <div ng-if="$parent.$parent.synchronizeUserDone">{% verbatim %}<strong>{{ 'General_Done'|translate }}!</strong>{% endverbatim %}</div>
-                <br/>
+            <div piwik-field uicontrol="text" name="ldap_user_id_field"
+                 title="{{ 'LoginLdap_UserIdField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_user_id_field }}"
+                 ng-model="ajaxForm.data.ldap_user_id_field"
+                 inline-help="{{ 'LoginLdap_UserIdFieldDescription'|translate|e('html_attr') }}">
             </div>
-            <span>{{ 'LoginLdap_LoadUserCommandDesc'|translate('<a target="_blank" href="https://github.com/piwik/plugin-LoginLdap#commands">loginldap:synchronize-users</a>')|raw }}</span>
-        </div>
 
-        <!-- generate random token_auth for new users -->
-
-        <div class="form-group">
-            <div class="form-help">
-                {{ 'LoginLdap_GenerateRandomTokenAuthDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_GenerateRandomTokenAuthDescription2'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_password_field"
+                 title="{{ 'LoginLdap_PasswordField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_password_field }}"
+                 ng-model="ajaxForm.data.ldap_password_field"
+                 inline-help="{{ 'LoginLdap_PasswordFieldDescription'|translate|e('html_attr') }}<br /><br />{{ 'LoginLdap_PasswordFieldDescription2'|translate|e('html_attr') }}">
             </div>
-            <label class="checkbox" for="generateRandomTokenAuth">
-                <input type="checkbox"
-                       id="generateRandomTokenAuth"
-                       {% if ldapConfig.enable_random_token_auth_generation %}checked="checked"{% endif %}
-                       name="enable_random_token_auth_generation"/>
-                {{ 'LoginLdap_GenerateRandomTokenAuth'|translate }}
-            </label>
-        </div>
 
-        <!-- user ID field -->
-
-        <div class="form-group">
-            <label for="userIdField">
-                {{ 'LoginLdap_UserIdField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_UserIdFieldDescription'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_mail_field"
+                 title="{{ 'LoginLdap_MailField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_mail_field }}"
+                 ng-model="ajaxForm.data.ldap_mail_field"
+                 inline-help="{{ 'LoginLdap_MailFieldDescription'|translate|e('html_attr') }}">
             </div>
-            <input id="userIdField"
-                   value="{{ ldapConfig.ldap_user_id_field }}"
-                   name="ldap_user_id_field"/>
-        </div>
 
-        <!-- password field -->
-
-        <div class="form-group">
-            <label for="ldap_password_field">
-                {{ 'LoginLdap_PasswordField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_PasswordFieldDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_PasswordFieldDescription2'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_alias_field"
+                 title="{{ 'LoginLdap_AliasField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_alias_field }}"
+                 ng-model="ajaxForm.data.ldap_alias_field"
+                 inline-help="{{ 'LoginLdap_AliasFieldDescription'|translate|e('html_attr') }}">
             </div>
-            <input id="ldap_password_field"
-                   value="{{ ldapConfig.ldap_password_field }}"
-                   name="ldap_password_field" />
-        </div>
 
-        <!-- email address field -->
-
-        <div class="form-group">
-            <label for="mailField">
-                {{ 'LoginLdap_MailField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_MailFieldDescription'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_first_name_field"
+                 title="{{ 'LoginLdap_FirstNameField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_first_name_field }}"
+                 ng-model="ajaxForm.data.ldap_first_name_field"
+                 inline-help="{{ 'LoginLdap_FirstNameFieldDescription'|translate|e('html_attr') }}<br /><br />{{ 'LoginLdap_FirstLastNameForAlias'|translate|e('html_attr') }}">
             </div>
-            <input id="mailField"
-                   value="{{ ldapConfig.ldap_mail_field }}"
-                   name="ldap_mail_field"/>
-        </div>
 
-        <!-- user alias field -->
-
-        <div class="form-group">
-            <label for="aliasField">
-                {{ 'LoginLdap_AliasField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_AliasFieldDescription'|translate }}
+            <div piwik-field uicontrol="text" name="ldap_last_name_field"
+                 title="{{ 'LoginLdap_LastNameField'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.ldap_last_name_field }}"
+                 ng-model="ajaxForm.data.ldap_last_name_field"
+                 inline-help="{{ 'LoginLdap_LastNameFieldDescription'|translate|e('html_attr') }}<br /><br />{{ 'LoginLdap_FirstLastNameForAlias'|translate|e('html_attr') }}">
             </div>
-            <input id="aliasField"
-                   value="{{ ldapConfig.ldap_alias_field }}"
-                   name="ldap_alias_field"/>
-        </div>
 
-        <!-- first name field -->
-
-        <div class="form-group">
-            <label for="firstNameField">
-                {{ 'LoginLdap_FirstNameField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_FirstNameFieldDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_FirstLastNameForAlias'|translate }}
+            <div piwik-field uicontrol="text" name="user_email_suffix"
+                 title="{{ 'LoginLdap_UsernameSuffix'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.user_email_suffix }}"
+                 ng-model="ajaxForm.data.user_email_suffix"
+                 inline-help="{{ 'LoginLdap_UsernameSuffixDescription'|translate|e('html_attr') }}">
             </div>
-            <input id="firstNameField"
-                   value="{{ ldapConfig.ldap_first_name_field }}"
-                   name="ldap_first_name_field" />
-        </div>
 
-        <!-- last name field -->
-
-        <div class="form-group">
-            <label for="lastNameField">
-                {{ 'LoginLdap_LastNameField'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_LastNameFieldDescription'|translate }}
-                <br /><br />
-                {{ 'LoginLdap_FirstLastNameForAlias'|translate }}
+            <div piwik-field uicontrol="text" name="new_user_default_sites_view_access"
+                 title="{{ 'LoginLdap_NewUserDefaultSitesViewAccess'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.new_user_default_sites_view_access }}"
+                 ng-model="ajaxForm.data.new_user_default_sites_view_access"
+                 inline-help="{{ 'LoginLdap_NewUserDefaultSitesViewAccessDescription'|translate|e('html_attr') }}">
             </div>
-            <input id="lastNameField"
-                   value="{{ ldapConfig.ldap_last_name_field }}"
-                   name="ldap_last_name_field" />
+
+            <hr />
+
+            <div piwik-save-button saving="ajaxform.isSubmitting" onconfirm="ajaxForm.submitForm()"></div>
+
         </div>
 
-        <!-- email address suffix -->
 
-        <div class="form-group">
-            <label for="usernameSuffix">
-                {{ 'LoginLdap_UsernameSuffix'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_UsernameSuffixDescription'|translate }}
+        <div piwik-content-block id="ldapUserMappingSettings"
+             content-title="{{ 'LoginLdap_AccessSyncSettings'|translate }}">
+
+           <div piwik-ajax-form
+              submit-api-method="'LoginLdap.saveEntitlementsConfig'"
+              use-custom-data-binding="true"
+              send-json-payload="true">
+
+
+            <p>
+                {{ 'LoginLdap_ReadMoreAboutAccessSynchronization'|translate('<a target="_blank" href="https://github.com/piwik/plugin-LoginLdap#piwik-access-synchronization">','</a>')|raw }}
+            </p>
+
+            <div piwik-field uicontrol="checkbox" name="enable_synchronize_access_from_ldap"
+                 title="{{ 'LoginLdap_EnableLdapAccessSynchronization'|translate|e('html_attr') }}"
+                 value="{{ ldapConfig.enable_synchronize_access_from_ldap }}"
+                 ng-model="ajaxForm.data.enable_synchronize_access_from_ldap"
+                 inline-help="{{ 'LoginLdap_EnableLdapAccessSynchronizationDescription'|translate|e('html_attr') }}">
             </div>
-            <input id="usernameSuffix"
-                   value="{{ ldapConfig.user_email_suffix }}"
-                   name="user_email_suffix"/>
-        </div>
 
-        <!-- email address suffix -->
+            <div ng-show="ajaxForm.data.enable_synchronize_access_from_ldap">
 
-        <div class="form-group">
-            <label for="newUserDefaultSitesViewAccess">
-                {{ 'LoginLdap_NewUserDefaultSitesViewAccess'|translate }}
-            </label>
-            <div class="form-help">
-                {{ 'LoginLdap_NewUserDefaultSitesViewAccessDescription'|translate }}
-            </div>
-            <input id="newUserDefaultSitesViewAccess"
-                   value="{{ ldapConfig.new_user_default_sites_view_access }}"
-                   name="new_user_default_sites_view_access"/>
-        </div>
-
-        <!-- submit -->
-
-        <input class="submit"
-               type="submit"
-               value="{{ 'LoginLdap_SaveUserSyncSettings'|translate }}"
-               ng-disabled="ajaxForm.isSubmitting"/>
-
-    </div>
-
-    <!-- access synchronization settings -->
-
-    <h2>{{ 'LoginLdap_AccessSyncSettings'|translate }}</h2>
-    <p>
-        {{ 'LoginLdap_ReadMoreAboutAccessSynchronization'
-            |translate('<a target="_blank" href="https://github.com/piwik/plugin-LoginLdap#piwik-access-synchronization">','</a>')
-            |raw }}
-    </p>
-
-    <div piwik-ajax-form
-         submit-api-method="'LoginLdap.saveEntitlementsConfig'"
-         send-json-payload="true">
-
-        <!-- enable synchronization -->
-
-        <div class="form-group">
-            <div class="form-help">
-                {{ 'LoginLdap_EnableLdapAccessSynchronizationDescription'|translate }}
-            </div>
-            <label class="checkbox" for="enableLdapAccessSync">
-                <input type="checkbox"
-                       {% if ldapConfig.enable_synchronize_access_from_ldap %}checked="checked"{% endif %}
-                       id="enableLdapAccessSync"
-                       name="enable_synchronize_access_from_ldap"/>
-                {{ 'LoginLdap_EnableLdapAccessSynchronization'|translate }}
-            </label>
-        </div>
-
-        <div ng-show="ajaxForm.data.enable_synchronize_access_from_ldap">
-
-            <!-- synchronization method -->
-
-            <div class="form-group">
-                <label for="entitlementsType">
-                    {{ 'LoginLdap_EntitlementsSynchronizationMethod'|translate }}
-                </label>
-                <div class="form-help">
-                    {{ 'LoginLdap_EntitlementsSynchronizationMethodDescription'|translate }}
+                <!-- synchronization method -->
+                <div piwik-field uicontrol="select" name="entitlements_type"
+                     title="{{ 'LoginLdap_EntitlementsSynchronizationMethod'|translate }}"
+                     value="{{ ldapConfig.entitlements_type }}"
+                     options='{groups: "Synchronize using Groups", attributes: "Synchronize using Attributes"}'
+                     ng-model="ajaxForm.data.entitlements_type">
                 </div>
-                <select name="entitlements_type" id="entitlementsType">
-                    <option value="groups" {% if ldapConfig.entitlements_type == 'groups' %}selected{% endif %}>
-                        {{ 'LoginLdap_UsingLDAPGroups'|translate }}
-                    </option>
-                    <option value="attributes" {% if ldapConfig.entitlements_type == 'attributes' %}selected{% endif %}>
-                        {{ 'LoginLdap_UsingLDAPAttributes'|translate }}
-                    </option>
-                </select>
-            </div>
-
-            <!-- synchronize using groups -->
-
-            <div ng-show="ajaxForm.data.entitlements_type === 'groups'">
-
-                <h3>
-                    {{ 'LoginLdap_EntitlementsFromLDAPGroups'|translate }}
-                </h3>
-
-                <!-- superuser group -->
-
-                <div class="form-group">
-                    <label for="entitlementsSuperuserDn">
-                        {{ 'LoginLdap_SuperUserGroupDNField'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_SuperUserGroupDNDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           name="entitlements_superuser_dn"
-                           value="{{ ldapConfig.entitlements_superuser_dn }}"
-                           id="entitlementsSuperuserDn"
-                           placeholder="{{ exampleGroupDn }}" />
-                </div>
-
-                {% for site in allSites %}
-
-                    <hr />
-
-                    <div class="form-group">
-                        <h4>{{ site.name }}</h4>
+                
+                <div ng-show="ajaxForm.data.entitlements_type === 'groups'">
+                    
+                    <!-- Superuser Group DN -->
+                    <div piwik-field uicontrol="text" name="entitlements_superuser_dn"
+                         title="{{ 'LoginLdap_SuperUserGroupDNField'|translate }}"
+                         value="{{ ldapConfig.entitlements_superuser_dn }}"
+                         ng-model="ajaxForm.data.entitlements_superuser_dn"
+                         placeholder="{{ exampleGroupDn }}"
+                         inline-help="{{ 'LoginLdap_SuperUserGroupDNDescription'|translate }}">
                     </div>
 
-                    <!-- site admin group -->
+                    <!-- Groups per website specified -->
+                    {% for site in allSites %}
+                        <div class="form-group">
+                            <h3>{{ site.name }}</h3>
 
-                    <div class="form-group">
-                        <label for="entitlementsSite{{ site.idsite }}AdminDn">
-                            {{ 'LoginLdap_AdminUserGroupDNField'|translate(site.name) }}
-                        </label>
-                        <div class="form-help">
-                            {{ 'LoginLdap_AdminUserGroupDNDescription'|translate(site.name) }}
+                            <!-- site admin group -->
+                            <div piwik-field uicontrol="text" name="entitlementsSite{{ site.idsite }}AdminDn"
+                                 title="{{ 'LoginLdap_AdminUserGroupDNField'|translate(site.name) }}"
+                                 value="{{ ldapConfig['groupEntitlements']['entitlements_site_' ~ site.idsite ~ '_admin_dn'] }}"
+                                 ng-model="ajaxForm.data.entitlements_site_{{ site.idsite }}_admin_dn"
+                                 inline-help="{{ 'LoginLdap_AdminUserGroupDNDescription'|translate(site.name) }}">
+                            </div>
+
+                            <!-- site view group -->
+                            <div piwik-field uicontrol="text" name="entitlementsSite{{ site.idsite }}ViewDn"
+                                 title="{{ 'LoginLdap_ViewUserGroupDNField'|translate(site.name) }}"
+                                 value="{{ ldapConfig['groupEntitlements']['entitlements_site_' ~ site.idsite ~ '_view_dn'] }}"
+                                 ng-model="ajaxForm.data.entitlements_site_{{ site.idsite }}_view_dn"
+                                 inline-help="{{ 'LoginLdap_ViewUserGroupDNDescription'|translate(site.name) }}">
+                            </div>
                         </div>
 
-                        <input type="text"
-                               name="entitlements_site_{{ site.idsite }}_admin_dn"
-                               value="{{ ldapConfig['groupEntitlements']['entitlements_site_' ~ site.idsite ~ '_admin_dn'] }}"
-                               id="entitlementsSite{{ site.idsite }}AdminDn"
-                               placeholder="{{ exampleGroupDn }}" />
+                    {% endfor %}
+
+                </div>
+
+                <!-- Configure using Attributes -->
+                <div ng-show="ajaxForm.data.entitlements_type === 'attributes'">
+                    <div piwik-notification context="info">
+                        <strong>{{ 'LoginLdap_ExpectedLdapAttributes'|translate }}</strong><br/>
+                        <br/>
+                        {{ 'LoginLdap_ExpectedLdapAttributesPrelude'|translate }}:<br/>
+                        <br/>
+                        <ul>
+                            <li>{% verbatim %}{{ $parent.$parent.$parent.$parent.$parent.getSampleViewAttribute(ajaxForm.data) }}{% endverbatim %}</li>
+                            <li>{% verbatim %}{{ $parent.$parent.$parent.$parent.$parent.getSampleAdminAttribute(ajaxForm.data) }}{% endverbatim %}</li>
+                            <li>{% verbatim %}{{ $parent.$parent.$parent.$parent.$parent.getSampleSuperuserAttribute(ajaxForm.data) }}{% endverbatim %}</li>
+                        </ul>
                     </div>
 
-                    <!-- site view group -->
-
-                    <div class="form-group">
-                        <label for="entitlementsSite{{ site.idsite }}ViewDn">
-                            {{ 'LoginLdap_ViewUserGroupDNField'|translate(site.name) }}
-                        </label>
-                        <div class="form-help">
-                            {{ 'LoginLdap_ViewUserGroupDNDescription'|translate(site.name) }}
-                        </div>
-                        <input type="text"
-                               name="entitlements_site_{{ site.idsite }}_view_dn"
-                               value="{{ ldapConfig['groupEntitlements']['entitlements_site_' ~ site.idsite ~ '_view_dn'] }}"
-                               id="entitlementsSite{{ site.idsite }}ViewDn"
-                               placeholder="{{ exampleGroupDn }}" />
+                    <div piwik-field uicontrol="text" name="ldap_view_access_field"
+                         title="{{ 'LoginLdap_LdapViewAccessField'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.ldap_view_access_field }}"
+                         ng-model="ajaxForm.data.ldap_view_access_field"
+                         inline-help="{{ 'LoginLdap_LdapViewAccessFieldDescription'|translate|e('html_attr') }}">
                     </div>
 
-                {% endfor %}
+                    <div piwik-field uicontrol="text" name="ldap_admin_access_field"
+                         title="{{ 'LoginLdap_LdapAdminAccessField'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.ldap_admin_access_field }}"
+                         ng-model="ajaxForm.data.ldap_admin_access_field"
+                         inline-help="{{ 'LoginLdap_LdapAdminAccessFieldDescription'|translate|e('html_attr') }}">
+                    </div>
+
+                    <div piwik-field uicontrol="text" name="ldap_superuser_access_field"
+                         title="{{ 'LoginLdap_LdapSuperUserAccessField'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.ldap_superuser_access_field }}"
+                         ng-model="ajaxForm.data.ldap_superuser_access_field"
+                         inline-help="{{ 'LoginLdap_LdapSuperUserAccessFieldDescription'|translate|e('html_attr') }}">
+                    </div>
+
+                    <div piwik-field uicontrol="text" name="user_access_attribute_server_specification_delimiter"
+                         title="{{ 'LoginLdap_LdapUserAccessAttributeServerSpecDelimiter'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.user_access_attribute_server_specification_delimiter }}"
+                         ng-model="ajaxForm.data.user_access_attribute_server_specification_delimiter"
+                         inline-help="{{ 'LoginLdap_LdapUserAccessAttributeServerSpecDelimiterDescription'|translate|e('html_attr') }}">
+                    </div>
+
+                    <div piwik-field uicontrol="text" name="user_access_attribute_server_separator"
+                         title="{{ 'LoginLdap_LdapUserAccessAttributeServerSeparator'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.user_access_attribute_server_separator }}"
+                         ng-model="ajaxForm.data.user_access_attribute_server_separator"
+                         inline-help="{{ 'LoginLdap_LdapUserAccessAttributeServerSeparatorDescription'|translate|e('html_attr') }}">
+                    </div>
+
+                    <div piwik-field uicontrol="text" name="instance_name"
+                         title="{{ 'LoginLdap_ThisPiwikInstanceName'|translate|e('html_attr') }}"
+                         value="{{ ldapConfig.instance_name }}"
+                         ng-model="ajaxForm.data.instance_name"
+                         inline-help="{{ 'LoginLdap_ThisPiwikInstanceNameDescription'|translate|e('html_attr') }}">
+                    </div>
+                </div>
 
                 <hr />
 
+                <div piwik-save-button saving="ajaxform.isSubmitting" onconfirm="ajaxForm.submitForm()"></div>
+                </div><!-- /Form -->
+                
             </div>
-
-            <!-- synchronize using attributes -->
-
-            <div ng-show="ajaxForm.data.entitlements_type === 'attributes'">
-
-                <h3>
-                    {{ 'LoginLdap_EntitlementsFromLDAPGroups'|translate }}
-                </h3>
-
-                <!-- superuser attribute -->
-
-                <div class="form-group">
-                    <label for="ldapSuperUserAccessField">
-                        {{ 'LoginLdap_LdapSuperUserAccessField'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_LdapSuperUserAccessFieldDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="ldapSuperUserAccessField"
-                           value="{{ ldapConfig.ldap_superuser_access_field }}"
-                           name="ldap_superuser_access_field" />
-                </div>
-
-                <!-- admin attribute -->
-
-                <div class="form-group">
-                    <label for="ldapAdminAccessField">
-                        {{ 'LoginLdap_LdapAdminAccessField'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_LdapAdminAccessFieldDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="ldapAdminAccessField"
-                           value="{{ ldapConfig.ldap_admin_access_field }}"
-                           name="ldap_admin_access_field" />
-                </div>
-
-                <!-- view attribute -->
-
-                <div class="form-group">
-                    <label for="ldapViewAccessField">{{ 'LoginLdap_LdapViewAccessField'|translate }}</label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_LdapViewAccessFieldDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="ldapViewAccessField"
-                           value="{{ ldapConfig.ldap_view_access_field }}"
-                           name="ldap_view_access_field" />
-                </div>
-
-                <!-- server delimiter -->
-
-                <div class="form-group">
-                    <label for="userAccessAttributeServerSpecDelimiter">
-                        {{ 'LoginLdap_LdapUserAccessAttributeServerSpecDelimiter'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_LdapUserAccessAttributeServerSpecDelimiterDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="userAccessAttributeServerSpecDelimiter"
-                           value="{{ ldapConfig.user_access_attribute_server_specification_delimiter }}"
-                           name="user_access_attribute_server_specification_delimiter"/>
-                </div>
-
-                <!-- site delimiter -->
-
-                <div class="form-group">
-                    <label for="userAccessAttributeServerSeparator">
-                        {{ 'LoginLdap_LdapUserAccessAttributeServerSeparator'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_LdapUserAccessAttributeServerSeparatorDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="userAccessAttributeServerSeparator"
-                           value="{{ ldapConfig.user_access_attribute_server_separator }}"
-                           name="user_access_attribute_server_separator" />
-                </div>
-
-                <!-- instance name -->
-
-                <div class="form-group">
-                    <label for="instanceName">
-                        {{ 'LoginLdap_ThisPiwikInstanceName'|translate }}
-                    </label>
-                    <div class="form-help">
-                        {{ 'LoginLdap_ThisPiwikInstanceNameDescription'|translate }}
-                    </div>
-                    <input type="text"
-                           id="instanceName"
-                           value="{{ ldapConfig.instance_name }}"
-                           name="instance_name" />
-                </div>
-
-                <!-- expected attributes -->
-
-                <div piwik-notification context="info" noclear="true">
-                    <strong>{{ 'LoginLdap_ExpectedLdapAttributes'|translate }}</strong><br/>
-                    <br/>
-                    {{ 'LoginLdap_ExpectedLdapAttributesPrelude'|translate }}:<br/>
-                    <br/>
-                    <ul>
-                        <li>{% verbatim %}{{ $parent.$parent.getSampleViewAttribute(ajaxForm.data) }}{% endverbatim %}</li>
-                        <li>{% verbatim %}{{ $parent.$parent.getSampleAdminAttribute(ajaxForm.data) }}{% endverbatim %}</li>
-                        <li>{% verbatim %}{{ $parent.$parent.getSampleSuperuserAttribute(ajaxForm.data) }}{% endverbatim %}</li>
-                    </ul>
-                </div>
-
-
-            </div>
-
         </div>
-
-        <!-- submit -->
-
-        <input class="submit"
-               type="submit"
-               value="{{ 'LoginLdap_SaveAccessSyncSettings'|translate }}"
-               ng-disabled="ajaxForm.isSubmitting"/>
 
     </div>
 
-    <!-- servers -->
+    <div piwik-content-block
+         id="ldapUserMappingSettings"
+         content-title="{{ 'LoginLdap_LoadUser'|translate|e('html_attr') }}">
 
-    <h2>{{ 'LoginLdap_LDAPServers'|translate }}</h2>
+        <p>{{ 'LoginLdap_LoadUserDescription'|translate }}</p>
 
-    <div piwik-ajax-form
-         ng-model="servers"
-         submit-api-method="'LoginLdap.saveServersInfo'"
-         send-json-payload="true"
-         use-custom-data-binding="true"
-         id="serverForm">
-
-        <div ng-show="ajaxForm.data.length">
-            <p>
-                {{ 'General_Note'|translate }}: {{ 'LoginLdap_ServerNameEditInstructions'|translate }}</p>
-            <hr />
+        <div piwik-field uicontrol="text"
+             ng-model="userToSynchronize" placeholder="Enter a username...">
         </div>
 
-        <div ng-show="!ajaxForm.data.length">
-            <div class="alert alert-danger">
-                {{ 'LoginLdap_AddAServer'|translate }}
-            </div>
+        <div piwik-save-button onconfirm="$parent.$parent.synchronizeUser(userToSynchronize)" value="{{ 'LoginLdap_Go'|translate }}"></div>
+
+        <img src="plugins/Morpheus/images/loading-blue.gif"
+             ng-show="$parent.$parent.currentSynchronizeUserRequest"/><br/>
+        <br/>
+        <div ng-show="$parent.$parent.synchronizeUserError || $parent.$parent.synchronizeUserDone">
+            <div ng-if="$parent.$parent.synchronizeUserError">{% verbatim %}{{ $parent.$parent.$parent.synchronizeUserError }}{% endverbatim %}</div>
+            <div ng-if="$parent.$parent.synchronizeUserDone">{% verbatim %}<strong>{{ 'General_Done'|translate }}!</strong>{% endverbatim %}</div>
+            <br/>
         </div>
 
-        <div ng-repeat="serverInfo in ajaxForm.data">
+        <span>{{ 'LoginLdap_LoadUserCommandDesc'|translate('<a target="_blank" href="https://github.com/piwik/plugin-LoginLdap#commands">loginldap:synchronize-users</a>')|raw }}</span>
 
-            <!-- delete -->
+    </div>
 
-            <input type="button"
-                   class="btn pull-right"
-                   value="{{ 'General_Delete'|translate }}"
-                   ng-click="ajaxForm.data.splice($index, 1)"/>
+    <div piwik-content-block
+         content-title="{{ 'LoginLdap_LDAPServers'|translate|e('html_attr') }}">
 
-            <!-- name -->
+        <div piwik-ajax-form
+             ng-model="servers"
+             submit-api-method="'LoginLdap.saveServersInfo'"
+             send-json-payload="true"
+             use-custom-data-binding="true">
+            <div ng-repeat="serverInfo in ajaxForm.data" id="ldapServersTable">
+                    <div piwik-field uicontrol="text"
+                         title="{{ 'LoginLdap_ServerName'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.name">
+                    </div>
 
-            <h3 ng-show="!serverInfo.isEditingName"
-                ng-click="serverInfo.isEditingName = true">
-                {% verbatim %}{{ serverInfo.name }}{% endverbatim %}
-            </h3>
-            <div class="form-group">
-                <input type="text"
-                       ng-show="serverInfo.isEditingName"
-                       ng-blur="serverInfo.isEditingName = false"
-                       ng-model="serverInfo.name" />
-            </div>
+                    <div piwik-field uicontrol="text"
+                         title="{{ 'LoginLdap_ServerUrl'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.hostname" placeholder="localhost">
+                    </div>
 
-            <!-- url -->
+                    <div piwik-field uicontrol="text"
+                         title="{{ 'LoginLdap_ServerUrl'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.port" placeholder="389"
+                         inline-help="{{ 'LoginLdap_LdapUrlPortWarning'|translate|e('html_attr') }}">
+                    </div>
 
-            <div class="form-group">
-                <label for="serverUrl-\{\{ $index \}\}">
-                    {{ 'LoginLdap_ServerUrl'|translate }}
-                </label>
-                <input type="text"
-                       placeholder="ldaps://ldap.domain.com"
-                       id="serverUrl-\{\{ $index \}\}"
-                       ng-model="serverInfo.hostname"/>
-            </div>
+                    <div piwik-field uicontrol="text"
+                         title="{{ 'LoginLdap_BaseDn'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.base_dn" placeholder="dc=example,dc=site,dc=org">
+                    </div>
 
-            <!-- port -->
+                    <div piwik-field uicontrol="text"
+                         title="{{ 'LoginLdap_AdminUser'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.admin_user" placeholder="cn=admin,dc=example,dc=site,dc=org"
+                         inline-help="{{ 'LoginLdap_AdminUserDescription'|translate|e('html_attr') }}">
+                    </div>
 
-            <div class="form-group">
-                <label for="ldapPort-\{\{ $index \}\}">
-                    {{ 'LoginLdap_LdapPort'|translate }}
-                </label>
-                <div class="form-help">
-                    Default ports are 389 for ldap:// and 636 for ldaps://
-                </div>
-                <input type="text"
-                       id="ldapPort-\{\{ $index \}\}"
-                       ng-model="serverInfo.port" />
-            </div>
+                    <div piwik-field uicontrol="password"
+                         title="{{ 'LoginLdap_AdminPass'|translate|e('html_attr') }}"
+                         ng-model="serverInfo.admin_pass"
+                         inline-help="{{ 'LoginLdap_PasswordFieldHelp'|translate|e('html_attr') }}">
+                    </div>
 
-            <!-- base DN -->
+                <div piwik-save-button onconfirm="ajaxForm.data.splice($index, 1)" value="{{ 'General_Delete'|translate }}"></div>
 
-            <div class="form-group">
-                <label for="baseDn-\{\{ $index \}\}">
-                    {{ 'LoginLdap_BaseDn'|translate }}
-                </label>
-                <input type="text"
-                       id="baseDn-\{\{ $index \}\}"
-                       placeholder="{{ exampleBaseDn }}"
-                       ng-model="serverInfo.base_dn" />
-            </div>
-
-            <!-- bind username -->
-
-            <div class="form-group">
-                <label for="adminUser-\{\{ $index \}\}">
-                    {{ 'LoginLdap_AdminUser'|translate }}
-                </label>
-                <div class="form-help">
-                    {{ 'LoginLdap_AdminUserDescription'|translate }}
-                </div>
-                <input type="text"
-                       id="adminUser-\{\{ $index \}\}"
-                       placeholder="{{ exampleUserDn }}"
-                       ng-model="serverInfo.admin_user" />
-            </div>
-
-            <!-- password -->
-
-            <div class="form-group">
-                <label for="adminPass-\{\{ $index \}\}">
-                    {{ 'LoginLdap_AdminPass'|translate }}
-                </label>
-                <div class="form-help">
-                    {{ 'LoginLdap_PasswordFieldHelp'|translate }}
-                </div>
-                <input type="password"
-                       id="adminPass-\{\{ $index \}\}"
-                       ng-model="serverInfo.admin_pass" />
             </div>
 
             <hr />
 
+            <div piwik-save-button onconfirm="ajaxForm.data.addServer()" value="{{ 'General_Add'|translate }}"></div>
+            <div piwik-save-button saving="ajaxform.isSubmitting" onconfirm="ajaxForm.submitForm()"></div>
         </div>
-
-        <input type="button"
-               value="{{ 'General_Add'|translate }}"
-               ng-click="ajaxForm.data.addServer()"
-               class="submit" />
-        <input type="submit"
-               value="{{ 'LoginLdap_SaveLDAPServers'|translate }}"
-               class="submit"
-               ng-disabled="ajaxForm.isSubmitting" />
-
     </div>
-
 </div>
 {% endblock %}
