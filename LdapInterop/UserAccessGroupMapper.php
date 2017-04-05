@@ -74,6 +74,7 @@ class UserAccessGroupMapper extends UserAccessMapper
 
         // Get the Ldap Connection in case we need to search
         $ldapClient = LdapUsers::makeConfigured();
+        $memberOfAttribute = Config::getRequiredMemberOfField();
 
         // Make sure that the groups are an array. This can be an issue when user has only 1 group
         if (!is_array($ldapUser[strtolower($memberOfAttribute)])) {
@@ -81,7 +82,6 @@ class UserAccessGroupMapper extends UserAccessMapper
         }
 
         // Direct memberships are easier to resolve against (ie. 'memberOf' in AD)
-        $memberOfAttribute = Config::getRequiredMemberOfField();
         $directMemberships = array();
         if (array_key_exists(strtolower($memberOfAttribute), $ldapUser)) {
             $directMemberships = array_map(function($tmp_dn) {
